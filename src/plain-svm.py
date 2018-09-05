@@ -1,7 +1,8 @@
 from numpy import *
 
 
-def loadDataSet(filename):  # 读取数据
+def loadDataSet(filename):
+    # 读取数据
     dataMat = []
     labelMat = []
     fr = open(filename)
@@ -12,14 +13,16 @@ def loadDataSet(filename):  # 读取数据
     return dataMat, labelMat  # 返回数据特征和数据类别
 
 
-def selectJrand(i, m):  # 在0-m中随机选择一个不是i的整数
+def selectJrand(i, m):
+    # 在0-m中随机选择一个不是i的整数
     j = i
     while (j == i):
         j = int(random.uniform(0, m))
     return j
 
 
-def clipAlpha(aj, H, L):  # 保证a在L和H范围内（L <= a <= H）
+def clipAlpha(aj, H, L):
+    # 保证a在L和H范围内（L <= a <= H）
     if aj > H:
         aj = H
     if L > aj:
@@ -27,8 +30,12 @@ def clipAlpha(aj, H, L):  # 保证a在L和H范围内（L <= a <= H）
     return aj
 
 
+# 核函数
 def kernelTrans(X, A, kTup):
-    # 核函数，输入参数,X:支持向量的特征树；A：某一行特征数据；kTup：('lin',k1)核函数的类型和参数
+    """
+    输入参数:
+        X:支持向量的特征树；A：某一行特征数据；kTup：('lin',k1)核函数的类型和参数
+    """
     m, n = shape(X)
     K = mat(zeros((m, 1)))
     if kTup[0] == 'lin':  # 线性函数
@@ -39,9 +46,7 @@ def kernelTrans(X, A, kTup):
             K[j] = deltaRow * deltaRow.T
         K = exp(K / (-1*kTup[1]**2))  # 返回生成的结果
     else:
-        raise NameError(
-            'Houston We Have a Problem -- That Kernel is not recognized'
-            )
+        raise NameError('That Kernel is not recognized')
     return K
 
 
@@ -74,6 +79,7 @@ def selectJ(i, oS, Ei):
     Ej = 0
     oS.eCache[i] = [1, Ei]
     validEcacheList = nonzero(oS.eCache[:, 0].A)[0]  # 返回矩阵中的非零位置的行数
+
     if (len(validEcacheList)) > 1:
         for k in validEcacheList:
             if k == i:
@@ -96,32 +102,43 @@ def updateEk(oS, k):  # 更新os数据
     oS.eCache[k] = [1, Ek]
 
 
-# 首先检验ai是否满足KKT条件，如果不满足，随机选择aj进行优化，更新ai,aj,b值
-def innerL(i, oS):  # 输入参数i和所有参数数据
+def innerL(i, oS):
+    """
+        首先检验ai是否满足KKT条件，
+        如果不满足，随机选择aj进行优化，更新ai,aj,b值
+        输入参数: i, 所有参数数据
+    """
     Ei = calcEk(oS, i)  # 计算E值
+
     # 检验这行数据是否符合KKT条件 参考《统计学习方法》p128公式7.111-113
     if ((oS.labelMat[i]*Ei < -oS.tol) and (oS.alphas[i] < oS.C)) or \
             ((oS.labelMat[i]*Ei > oS.tol) and (oS.alphas[i] > 0)):
+
         j, Ej = selectJ(i, oS, Ei)  # 随机选取aj，并返回其E值
         alphaIold = oS.alphas[i].copy()
         alphaJold = oS.alphas[j].copy()
+
         if (oS.labelMat[i] != oS.labelMat[j]):  # 以下代码的公式参考《统计学习方法》p126
             L = max(0, oS.alphas[j] - oS.alphas[i])
             H = min(oS.C, oS.C + oS.alphas[j] - oS.alphas[i])
         else:
             L = max(0, oS.alphas[j] + oS.alphas[i] - oS.C)
             H = min(oS.C, oS.alphas[j] + oS.alphas[i])
+
         if L == H:
             print("L==H")
             return 0
+
         # 参考《统计学习方法》p127公式7.107
         eta = 2.0 * oS.K[i, j] - oS.K[i, i] - oS.K[j, j]
         if eta >= 0:
             print("eta>=0")
             return 0
+
         oS.alphas[j] -= oS.labelMat[j]*(Ei - Ej)/eta  # 参考《统计学习方法》p127公式7.106
         oS.alphas[j] = clipAlpha(oS.alphas[j], H, L)  # 参考《统计学习方法》p127公式7.108
         updateEk(oS, j)
+
         if (abs(oS.alphas[j] - alphaJold) < oS.tol):  # alpha变化大小阀值（自己设定）
             print("j not moving enough")
             return 0
@@ -151,7 +168,9 @@ def innerL(i, oS):  # 输入参数i和所有参数数据
 
 # SMO函数，用于快速求解出alpha
 def smoP(dataMatIn, classLabels, C, toler, maxIter, kTup=('lin', 0)):
-    # 输入参数：数据特征，数据类别，参数C，阀值toler，最大迭代次数，核函数（默认线性核）
+    """
+        输入参数：数据特征，数据类别，参数C，阀值toler，最大迭代次数，核函数（默认线性核）
+    """
     oS = optStruct(
         mat(dataMatIn), mat(classLabels).transpose(), C, toler, kTup
         )
@@ -164,25 +183,23 @@ def smoP(dataMatIn, classLabels, C, toler, maxIter, kTup=('lin', 0)):
             for i in range(oS.m):  # 遍历所有数据
                 alphaPairsChanged += innerL(i, oS)
                 # 显示第多少次迭代，那行特征数据使alpha发生了改变，这次改变了多少次alpha
-                print(
-                    "fullSet, iter: %d i:%d, pairs changed %d" %
-                    (iter, i, alphaPairsChanged)
-                    )
+                print("fullSet, iter: {} i:{}, pairs changed {}".format
+                      ((iter, i, alphaPairsChanged)))
             iter += 1
         else:
             nonBoundIs = nonzero((oS.alphas.A > 0) * (oS.alphas.A < C))[0]
             for i in nonBoundIs:  # 遍历非边界的数据
                 alphaPairsChanged += innerL(i, oS)
-                print(
-                    "non-bound, iter: %d i:%d, pairs changed %d" %
-                    (iter, i, alphaPairsChanged)
-                    )
+                print("non-bound, iter: {} i:{}, pairs changed {}".format
+                      (iter, i, alphaPairsChanged))
             iter += 1
+
         if entireSet:
             entireSet = False
         elif (alphaPairsChanged == 0):
             entireSet = True
-        print("iteration number: %d" % iter)
+
+        print("iteration number: {}".format(iter))
     return oS.b, oS.alphas
 
 
@@ -211,6 +228,7 @@ def testRbf(data_train, data_test):
         if sign(predict) != sign(labelArr[i]):
             errorCount += 1
     print("the training error rate is: %f" % (float(errorCount)/m))  # 打印出错误率
+
     dataArr_test, labelArr_test = loadDataSet(data_test)  # 读取测试数据
     errorCount_test = 0
     datMat_test = mat(dataArr_test)
