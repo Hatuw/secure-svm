@@ -25,7 +25,7 @@ def clipAlpha(aj, H, L):
     # 保证a在L和H范围内（L <= a <= H）
     if aj > H:
         aj = H
-    if L > aj:
+    if aj < L:
         aj = L
     return aj
 
@@ -118,10 +118,11 @@ def innerL(i, oS):
         alphaIold = oS.alphas[i].copy()
         alphaJold = oS.alphas[j].copy()
 
-        if (oS.labelMat[i] != oS.labelMat[j]):  # 以下代码的公式参考《统计学习方法》p126
+        # 以下代码的公式参考《统计学习方法》p126
+        if (oS.labelMat[i] != oS.labelMat[j]):  # alpha1 - alpha2 = k
             L = max(0, oS.alphas[j] - oS.alphas[i])
             H = min(oS.C, oS.C + oS.alphas[j] - oS.alphas[i])
-        else:
+        else:  # alpha1 + alpha2 = k
             L = max(0, oS.alphas[j] + oS.alphas[i] - oS.C)
             H = min(oS.C, oS.alphas[j] + oS.alphas[i])
 
@@ -160,7 +161,7 @@ def innerL(i, oS):
         elif (0 < oS.alphas[j] < oS.C):
             oS.b = b2
         else:
-            oS.b = (b1 + b2)/2.0
+            oS.b = (b1 + b2) / 2.0
         return 1
     else:
         return 0
@@ -205,14 +206,17 @@ def smoP(dataMatIn, classLabels, C, toler, maxIter, kTup=('lin', 0)):
 
 def testRbf(data_train, data_test):
     dataArr, labelArr = loadDataSet(data_train)  # 读取训练数据
+
     # 通过SMO算法得到b和alpha
     b, alphas = smoP(dataArr, labelArr, 200, 0.0001, 10000, ('rbf', 1.3))
+
     datMat = mat(dataArr)
     labelMat = mat(labelArr).transpose()
     svInd = nonzero(alphas)[0]  # 选取不为0数据的行数（也就是支持向量）
     sVs = datMat[svInd]  # 支持向量的特征数据
     labelSV = labelMat[svInd]  # 支持向量的类别（1或-1）
     print("there are %d Support Vectors" % shape(sVs)[0])  # 打印出共有多少的支持向量
+
     m, n = shape(datMat)  # 训练数据的行列数
     errorCount = 0
     for i in range(m):
