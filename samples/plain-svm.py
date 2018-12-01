@@ -248,8 +248,8 @@ def testRbf(data_train, data_test):
 
 # 主程序
 def main():
-    filename_traindata = '../data/traindata.txt'
-    filename_testdata = '../data/testdata.txt'
+    filename_traindata = '../res/data/traindata.txt'
+    filename_testdata = '../res/data/testdata.txt'
     testRbf(filename_traindata, filename_testdata)
 
 
