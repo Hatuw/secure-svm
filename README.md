@@ -5,6 +5,8 @@
 
 ## enviroment
 
+refer to: `secure-gwas`
+
 1. m4
 
 ``` shell
