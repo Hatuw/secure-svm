@@ -9,10 +9,63 @@
 using namespace NTL;
 using namespace std;
 
-bool send_stream(string data_dir, MPCEnv &mpc)
+
+/**
+ * ===========================================================================
+ * Comment: (some questions about the "secure-gwas" project)
+ *  1. pheno --> phenotypes (表型)? .. Does it means ground-truth?
+ * ===========================================================================
+*/
+
+
+bool send_stream(string data_dir, MPCEnv &mpc, int mode)
 {
+  string data_x_file = data_dir + "data_x.txt";
+  string data_y_file = data_dir + "data_y.txt";
+
+  // flag: transfer y_data ?
+  bool label_flag = (mode == SVMIterator::GM_CODE) || (mode == SVMIterator::GMP_CODE);
+  bool missing_flag = (mode == SVMIterator::GM_CODE) || (mode == SVMIterator::GMP_CODE);
+
+  ifstream fin_x(data_x_file.c_str());
+  ifstream fin_y(data_y_file.c_str());
+
+  if (!fin_x.is_open()) {
+    cout << "Error: could not open" << data_x_file << endl;
+    return false;
+  }
+
+  if (!fin_y.is_open()) {
+    cout << "Error: could not open" << data_y_file << endl;
+  }
+
+  long val;
+  string line;
+
+  uint32_t lineno = 0;
+  while (getline(fin_x, line)) {
+    istringstream iss_x(line);
+
+    if (label_flag) {
+      Vec<ZZ_p> p;
+      p.SetLength(1 + Param::NUM_COVS);
+
+      fin_y >> p[0];
+
+      // ???
+    } else {
+      iss_x >> val;
+    }
+
+    // ???
+  }
+
+  fin_x.close();
+  fin_y.close();
+
   return true;
 }
+
 
 int main(int argc, char **argv)
 {
@@ -85,7 +138,7 @@ int main(int argc, char **argv)
 
     while (signal != SVMIterator::TERM_CODE)
     {
-      success = send_stream(data_dir, mpc);
+      success = send_stream(data_dir, mpc, signal);
       if (!success)
         break;
 
@@ -96,8 +149,8 @@ int main(int argc, char **argv)
     success = true;
   }
 
-  // Thiss is here just to keep P0 online until the end for data transfer
-  // In pratice, P0 would send data in advance before each phase and go oofline
+  // This is here just to keep P0 online until the end for data transfer
+  // In pratice, P0 would send data in advance before each phase and go offline
   if (pid == 0)
   {
     mpc.ReceiveBool(2);
