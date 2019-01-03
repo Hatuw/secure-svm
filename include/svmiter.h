@@ -1,15 +1,14 @@
 #ifndef __SVMITER_H_
 #define __SVMITER_H_
 
-#include "mpc.h"
 #include "assert.h"
-#include <vector>
+#include "mpc.h"
 #include <NTL/mat_ZZ_p.h>
+#include <vector>
 
 using namespace std;
 
-class SVMIterator
-{
+class SVMIterator {
 public:
   static const int TERM_CODE = 0;
   static const int G_CODE = 1;
@@ -17,14 +16,12 @@ public:
   static const int GM_CODE = 3;
   static const int GMP_CODE = 4;
 
-  explicit SVMIterator(MPCEnv &mpc, int pid)
-  {
+  explicit SVMIterator(MPCEnv &mpc, int pid) {
     this->mpc = &mpc;
     this->pid = pid;
   }
 
-  void Init(bool pheno_flag, bool missing_flag)
-  {
+  void Init(bool pheno_flag, bool missing_flag) {
     this->pheno_flag = pheno_flag;
     this->missing_flag = missing_flag;
     if (pid == 1)
@@ -33,46 +30,31 @@ public:
     cout << "Initialized SVMIterator" << endl;
   }
 
-  void Terminate()
-  {
+  void Terminate() {
     if (pid == 1)
       mpc->SendInt(TERM_CODE, 3);
   }
 
-  int TransferMode()
-  {
-    if (missing_flag)
-    {
-      if (pheno_flag)
-      {
+  int TransferMode() {
+    if (missing_flag) {
+      if (pheno_flag) {
         return GMP_CODE;
-      }
-      else
-      {
+      } else {
         return GM_CODE;
       }
-    }
-    else
-    {
-      if (pheno_flag)
-      {
+    } else {
+      if (pheno_flag) {
         return GP_CODE;
-      }
-      else
-      {
+      } else {
         return G_CODE;
       }
     }
   }
 
-  bool NotDone()
-  {
-    return num_left > 0;
-  }
+  bool NotDone() { return num_left > 0; }
 
   /* Return genotypes in dosage format (0, 1, or 2), assume no missing */
-  void GetNextGP(Vec<ZZ_p> &g, Vec<ZZ_p> &p)
-  {
+  void GetNextGP(Vec<ZZ_p> &g, Vec<ZZ_p> &p) {
     assert(TransferMode() == GP_CODE);
     Vec<ZZ_p> m;
     Mat<ZZ_p> gmat;
@@ -80,8 +62,7 @@ public:
     g = gmat[0];
   }
 
-  void GetNextG(Vec<ZZ_p> &g)
-  {
+  void GetNextG(Vec<ZZ_p> &g) {
     assert(TransferMode() == G_CODE);
     Vec<ZZ_p> p;
     Vec<ZZ_p> m;
@@ -91,15 +72,13 @@ public:
   }
 
   /* Return genotype probabilities with missingness information */
-  void GetNextGM(Mat<ZZ_p> &g, Vec<ZZ_p> &m)
-  {
+  void GetNextGM(Mat<ZZ_p> &g, Vec<ZZ_p> &m) {
     assert(TransferMode() == GM_CODE);
     Vec<ZZ_p> p;
     GetNextAux(g, m, p);
   }
 
-  void GetNextGMP(Mat<ZZ_p> &g, Vec<ZZ_p> &m, Vec<ZZ_p> &p)
-  {
+  void GetNextGMP(Mat<ZZ_p> &g, Vec<ZZ_p> &m, Vec<ZZ_p> &p) {
     assert(TransferMode() == GMP_CODE);
     GetNextAux(g, m, p);
   }
@@ -109,43 +88,28 @@ private:
   int pid;
   int num_left;
   int index;
-  bool pheno_flag; // ???
+  bool pheno_flag; // labels(y) flag ??
   bool missing_flag;
 
-  void GetNextAux(Mat<ZZ_p> &g, Vec<ZZ_p> &m, Vec<ZZ_p> &p)
-  {
+  void GetNextAux(Mat<ZZ_p> &g, Vec<ZZ_p> &m, Vec<ZZ_p> &p) {
     assert(NotDone());
 
-    if (missing_flag)
-    {
-    }
-    else
-    {
+    if (missing_flag) {
+    } else {
     }
 
-    if (pid == 2)
-    {
-      if (pheno_flag)
-      {
+    if (pid == 2) {
+      if (pheno_flag) {
       }
-      if (missing_flag)
-      {
+      if (missing_flag) {
+      } else {
       }
-      else
-      {
-      }
-    }
-    else if (pid == 1)
-    {
+    } else if (pid == 1) {
       mpc->SwitchSeed(3);
-      if (pheno_flag)
-      {
+      if (pheno_flag) {
       }
-      if (missing_flag)
-      {
-      }
-      else
-      {
+      if (missing_flag) {
+      } else {
       }
       mpc->RestoreSeed();
     }
