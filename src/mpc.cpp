@@ -129,6 +129,7 @@ bool MPCEnv::Initialize(int pid, vector< pair<int, int> > &pairs) {
   table_cache[1] = table;
   table_field_index[1] = 1;
 
+  /*
   // Table 2: parameters (intercept, slope) for piecewise-linear approximation of
   //          negative log-sigmoid function
   table.SetDims(2, 64);
@@ -157,6 +158,7 @@ bool MPCEnv::Initialize(int pid, vector< pair<int, int> > &pairs) {
   table_field_index[2] = 0;
 
   cout << "Generating lagrange cache" << endl;
+  */
 
   for (int cid = 0; cid < table_cache.length(); cid++) {
     long nrow = table_cache[cid].NumRows();
