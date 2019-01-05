@@ -8,7 +8,9 @@
 
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdio.h>
+#include <string>
 #include <vector>
 
 using namespace std;
@@ -324,6 +326,24 @@ static inline vector<string> load_suffixes(string fname) {
   ifs.close();
 
   return suffixes;
+}
+
+/**
+ * split a string
+ * @param &s {string} : string to split
+ * @param &sv {vector<string>} : string after split
+ * @param flag {char} : split flag
+ */
+static inline void split(const string &s, vector<string> &sv, const char flag = ' ') {
+  sv.clear();
+  istringstream iss(s);
+  string temp;
+
+  while (getline(iss, temp, flag)) {
+    // sv.push_back(stoi(temp));
+    sv.push_back(temp);
+  }
+  return;
 }
 
 #endif

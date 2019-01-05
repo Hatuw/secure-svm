@@ -8,14 +8,18 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <sstream>
+// #include <sstream>
+#include <string>
 
 using namespace NTL;
 using namespace std;
 
 /**
- *
- * n_rows {size_t} : rows of data
+ * mask_matrix
+ * data_dir {string}
+ * &mpc {MPCEnv}
+ * name {string} : file's name
+ * n_rows {size_t} : rows of data (batch or all)
  * n_cols {size_t} : columns of data
  */
 bool mask_matrix(string data_dir, MPCEnv &mpc, string name, size_t n_rows,
@@ -34,20 +38,28 @@ bool mask_matrix(string data_dir, MPCEnv &mpc, string name, size_t n_rows,
 
   string line;
   int i = 0;
+  vector<string> tmp_line;
   while (getline(fin, line)) {
     if (i % 1000 == 0) {
       cout << "Reading line " << i << endl;
     }
+    // split line with '\t' flag
+    split(line, tmp_line, '\t');
     for (int j = 0; j < n_cols; j++) {
       // XXX: why it should -48?
-      double val = ((double)line[j]) - 48;
+      // comment: 数据如果都是负数的话，那么DoubleToFP处理后的结果的长度应该是一样的
+      //  当然，如果数据都是正数的话，结果的长度也一样（不过较都是负数的长度会短很多）
+      //  猜测这是因为存储的精度问题。同时也是安全起见，将数据padding到同一长度
+      // double val = (stod(tmp_line[j])) - 48;
+      double val = (stod(tmp_line[j])) - 4;
+
       ZZ_p val_fp;
-      // nbit_k, nbit_f
       DoubleToFP(val_fp, val, Param::NBIT_K, Param::NBIT_F);
       matrix[i][j] = val_fp;
     }
     ++i;
   }
+  cout << matrix << endl;
 
   if (i != n_rows) {
     cout << "Error: Invalid number of rows: " << i << endl;
@@ -70,19 +82,25 @@ bool mask_matrix(string data_dir, MPCEnv &mpc, string name, size_t n_rows,
   return true;
 }
 
+/**
+ * mask_data
+ * data_dir {string}
+ * &mpc {MPCEnv}
+ */
 bool mask_data(string data_dir, MPCEnv &mpc) {
   vector<string> suffixes;
 
   // load suffixes file
-  string suffixes_file = "../res/data/traindata.txt";
-  suffixes = load_suffixes(suffixes_file);
+  string suffixes_file_dir = "../res/data/";
+  // suffixes = load_suffixes(suffixes_file);
+  suffixes.push_back("traindata.txt");
 
   mpc.SwitchSeed(1); /* Use CP1's seed. */
 
   fstream fs;
   string fname;
   for (int i = 0; i < suffixes.size(); i++) {
-    fname = cache(1, "seed" + suffixes[i]);
+    fname = cache(1, "seed_" + suffixes[i]);
     fs.open(fname.c_str(), ios::out | ios::binary);
     if (!fs.is_open()) {
       cout << "Error: could not open " << fname << endl;
@@ -93,12 +111,12 @@ bool mask_data(string data_dir, MPCEnv &mpc) {
 
     /* Write batch to file. */
     // n_file_batch, feature_rank  --> (rows cols)
-    if (!mask_matrix(data_dir, mpc, "X" + suffixes[i], 100, 100)) {
+    if (!mask_matrix(data_dir, mpc, suffixes[i], 100, 3)) {
       return false;
     }
-    if (!mask_matrix(data_dir, mpc, "y" + suffixes[i], 100, 2 - 1)) {
-      return false;
-    }
+    // if (!mask_matrix(data_dir, mpc, "Y" + suffixes[i], 100, 2 - 1)) {
+    //   return false;
+    // }
   }
 
   mpc.RestoreSeed();
@@ -166,10 +184,12 @@ int main(int argc, char *argv[]) {
       cout << "Party 3 done streaming data." << endl;
     }
     mpc.SendBool(true, 2);
+
   } else if (pid == 2) {
     /* Keep CP2 alive until SP has shared data with it. */
     mpc.ReceiveBool(3);
     success = true;
+
   } else if (pid == 1) {
     /* CP1 needs to save its seed so it can reconstruct the masked data. */
     string fname = cache(pid, "initial_seed");

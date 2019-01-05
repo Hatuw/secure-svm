@@ -37,4 +37,5 @@ bin/
 cache/
 out/
 log/
+res/data/*.bin
 # test_data_2/
