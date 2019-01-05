@@ -6,8 +6,10 @@
 #include "assert.h"
 #include "crypto.h"
 
+#include <fstream>
 #include <iostream>
 #include <stdio.h>
+#include <vector>
 
 using namespace std;
 using namespace NTL;
@@ -302,6 +304,7 @@ static inline double FPToDouble(ZZ_p &a, int k, int f) {
 
 /**
  * load suffixes file.
+ * @param fname {string} : filename
  */
 static inline vector<string> load_suffixes(string fname) {
   ifstream ifs;
