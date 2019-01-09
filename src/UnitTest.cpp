@@ -4,6 +4,7 @@
 #include <NTL/ZZ.h>
 #include <NTL/mat_ZZ.h>
 #include <NTL/mat_ZZ_p.h>
+#include <iomanip>
 #include <iostream>
 #include <sstream>
 
@@ -14,21 +15,28 @@ using namespace std;
 #define ABS(a) (((a) < 0) ? -(a) : (a))
 
 bool unit_test(MPCEnv &mpc, int pid) {
-  ZZ_p x;
-  double d;
+  ZZ_p pi2fp;
+  double fp2pi;
   double eps = 1e-6;
+  const long double PI = 3.141592653589793238462643383279;
 
-  cout << "[Fixed-point ZZ_p <-> Double conversion]" << endl;
-  x = DoubleToFP(3.141592653589793238462643383279, Param::NBIT_K,
-                 Param::NBIT_F);
-  d = ABS(FPToDouble(x, Param::NBIT_K, Param::NBIT_F) -
-          3.141592653589793238462643383279);
+  // cout << "[Fixed-point ZZ_p <-> Double conversion]" << endl;
+  // x = DoubleToFP(PI, Param::NBIT_K, Param::NBIT_F);
+  // d = ABS(FPToDouble(x, Param::NBIT_K, Param::NBIT_F) - PI);
   if (pid == 0) {
-    cout << "3.14... --> x       : " << x << endl;
-    cout << "  d     --> 3.14... : " << d << endl;
-    assert(d < eps);
+    cout.precision(32);
+    for (int i = -100; i <= 100; ++i) {
+      pi2fp = DoubleToFP(PI - i, Param::NBIT_K, Param::NBIT_F);
+      fp2pi = FPToDouble(pi2fp, Param::NBIT_K, Param::NBIT_F) + i;
+      cout << "PI-(" << i << ") --> FP: " << pi2fp << "\t\t";
+      cout << "FP --> Double + (" << i << "): " << fp2pi << endl;
+    }
+
+    // assert(d < eps);
     cout << "Success" << endl;
   }
+
+  #undef PI
   return true;
 }
 
