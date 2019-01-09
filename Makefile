@@ -15,7 +15,7 @@ CPP_SRC = crypto.cpp connect.cpp aesstream.cpp mpc.cpp param.cpp
 SRC = $(addprefix $(SRC_DIR)/, $(CPP_SRC))
 # PROGNAMES = DataSharingClient GwasClient LogiRegClient GenerateKey
 # PROGNAMES = DataSharingClient SVMClient
-PROGNAMES = ShareData TrainSVM
+PROGNAMES = ShareData TrainSVM UnitTest
 
 OBJPATHS = $(patsubst %.cpp,$(BUILD)/%.o, $(CPP_SRC))
 TESTPATHS = $(addprefix $(PROGS)/, $(PROGNAMES))
